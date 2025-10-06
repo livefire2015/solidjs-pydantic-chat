@@ -7,7 +7,9 @@
     "start": "vite",
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "backend": "cd app && uv run python -m uvicorn main:app --reload",
+    "dev:full": "npm run backend & npm run dev"
   },
   "license": "MIT",
   "devDependencies": {
