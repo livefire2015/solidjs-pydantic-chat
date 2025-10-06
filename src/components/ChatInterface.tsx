@@ -10,9 +10,18 @@ const ChatInterface: Component = () => {
     <div class="flex flex-col h-screen bg-gray-50">
       <header class="bg-white shadow-sm border-b px-6 py-4">
         <div class="flex justify-between items-center">
-          <h1 class="text-xl font-semibold text-gray-900">
-            SolidJS + PydanticAI Chat
-          </h1>
+          <div class="text-xl font-semibold text-gray-900">
+            <div class="flex items-center space-x-2">
+              <span class="text-blue-600">SolidJS + TailwindCSS</span>
+              <span class="text-gray-400">↔</span>
+              <span class="text-green-600 font-bold">AG-UI Protocol</span>
+              <span class="text-gray-400">↔</span>
+              <span class="text-purple-600">PydanticAI</span>
+            </div>
+            <div class="text-xs text-gray-500 mt-1 font-normal">
+              Real-time AI chat via Server-Sent Events
+            </div>
+          </div>
           <div class="flex space-x-2">
             <button
               onClick={chatService.clearMessages}
