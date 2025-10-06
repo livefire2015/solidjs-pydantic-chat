@@ -2,6 +2,12 @@
 
 A modern chat application demonstrating the integration of **SolidJS** (frontend) with **PydanticAI** (backend) using the **AG-UI protocol** for real-time streaming communication.
 
+## Screenshot
+
+![Chat Application Screenshot](assets/chat-screenshot.jpg)
+
+*The chat interface shows a conversation where a user asks "Where is San Francisco?" and receives a detailed response from the PydanticAI agent. The application features a clean, modern UI with message bubbles, timestamps, and a responsive design. The browser developer tools show the successful API requests being made to the backend.*
+
 ## Architecture
 
 - **Frontend**: SolidJS + TailwindCSS
