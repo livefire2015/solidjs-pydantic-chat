@@ -55,7 +55,7 @@ async def run_agent(request: ChatRequest) -> ChatResponse:
         # Run the agent
         result = await agent.run(last_message, deps=deps)
 
-        return ChatResponse(message=result.data)
+        return ChatResponse(message=result.output)
     except Exception as e:
         print(f"Error running agent: {e}")
         # Return error as response
