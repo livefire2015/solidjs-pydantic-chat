@@ -12,13 +12,15 @@ A modern chat application demonstrating the integration of **SolidJS** (frontend
 
 - **Frontend**: SolidJS + TailwindCSS
 - **Backend**: FastAPI + PydanticAI
-- **Communication**: RESTful API for chat messages
+- **Communication**: AG-UI Protocol with Server-Sent Events (SSE) streaming
 - **Build System**: Vite for frontend, uv for Python backend
 
 ## Features
 
 - ✅ AI-powered chat with PydanticAI
 - ✅ Tool execution (calculator, knowledge search)
+- ✅ **AG-UI Protocol** streaming with Server-Sent Events (SSE)
+- ✅ **Real-time message streaming** with AG-UI event types
 - ✅ Type-safe communication using Pydantic and TypeScript
 - ✅ Clean, modern UI with TailwindCSS styling
 - ✅ Fast development with hot reload
@@ -68,7 +70,7 @@ npm run dev:full
 
 This will start:
 - Backend server on `http://localhost:8000`
-- Frontend dev server on `http://localhost:5173`
+- Frontend dev server on `http://localhost:3000`
 
 ### Option 2: Run Separately
 
@@ -86,7 +88,7 @@ npm run dev
 
 ## Usage
 
-1. Open your browser to `http://localhost:5173`
+1. Open your browser to `http://localhost:3000`
 2. Start chatting with the AI assistant
 3. Try these example prompts:
    - "What is 2 + 2?" (triggers calculator tool)
@@ -112,16 +114,33 @@ npm run dev
 │   │   ├── MessageList.tsx   # Display messages
 │   │   └── MessageInput.tsx  # User input component
 │   ├── services/
-│   │   ├── agui-service.ts   # Chat service for API communication
-│   │   └── types.ts          # TypeScript type definitions
+│   │   ├── agui-service.ts   # AG-UI Protocol service with SSE streaming
+│   │   └── types.ts          # AG-UI Protocol types and definitions
 │   └── App.tsx              # Main app component
 └── package.json             # Frontend dependencies & scripts
 ```
+
+## AG-UI Protocol Implementation
+
+This application implements the **[AG-UI Protocol](https://docs.ag-ui.com/)** for real-time AI-UI communication:
+
+- **Server-Sent Events (SSE)**: Streaming communication via `/agent/stream`
+- **Event Types**: RUN_STARTED, TEXT_MESSAGE_CONTENT, RUN_FINISHED, RUN_ERROR
+- **Real-time Updates**: Messages stream live as the AI agent processes responses
+- **Type-safe Events**: Full TypeScript support for all AG-UI event types
+
+### AG-UI Event Flow
+
+1. **RUN_STARTED**: Agent begins processing user input
+2. **TEXT_MESSAGE_CONTENT**: Streaming response content (can be multiple events)
+3. **RUN_FINISHED**: Agent completes processing successfully
+4. **RUN_ERROR**: Error occurred during processing
 
 ## Key Technologies
 
 - **[SolidJS](https://solidjs.com/)**: Reactive UI framework
 - **[PydanticAI](https://ai.pydantic.dev/)**: Type-safe AI agent framework
+- **[AG-UI Protocol](https://docs.ag-ui.com/)**: AI-UI communication standard
 - **[FastAPI](https://fastapi.tiangolo.com/)**: Modern Python web framework
 - **[TailwindCSS](https://tailwindcss.com/)**: Utility-first CSS framework
 - **[uv](https://github.com/astral-sh/uv)**: Fast Python package manager
@@ -129,7 +148,8 @@ npm run dev
 ## API Endpoints
 
 - `GET /` - Health check
-- `POST /agent` - Chat endpoint for AI messages
+- `POST /agent` - Simple chat endpoint (legacy)
+- `POST /agent/stream` - **AG-UI Protocol streaming endpoint** (primary)
 - `GET /health` - Backend health status
 
 ## Development
