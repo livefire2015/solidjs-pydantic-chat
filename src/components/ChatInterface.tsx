@@ -1,13 +1,15 @@
-import { Component, Show } from 'solid-js';
+import { Component, Show, createSignal } from 'solid-js';
 import { createAGUIService } from '../services/agui-service';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
+import StatePanel from './StatePanel';
 
 const ChatInterface: Component = () => {
   const chatService = createAGUIService();
+  const [isStatePanelVisible, setIsStatePanelVisible] = createSignal(false);
 
   return (
-    <div class="flex flex-col h-screen bg-gray-50">
+    <div class="flex flex-col h-screen bg-gray-50 relative">
       <header class="bg-white shadow-sm border-b px-6 py-4">
         <div class="flex justify-between items-center">
           <div class="text-xl font-semibold text-gray-900">
@@ -28,6 +30,16 @@ const ChatInterface: Component = () => {
               class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
             >
               Clear Chat
+            </button>
+            <button
+              onClick={() => setIsStatePanelVisible(!isStatePanelVisible())}
+              class={`px-3 py-1 text-sm rounded transition-colors ${
+                isStatePanelVisible()
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Agent State
             </button>
             <div class="flex items-center space-x-2">
               <div class="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -78,6 +90,13 @@ const ChatInterface: Component = () => {
           disabled={chatService.isLoading()}
         />
       </main>
+
+      {/* State Panel */}
+      <StatePanel
+        agentState={chatService.agentState()}
+        isVisible={isStatePanelVisible()}
+        onToggle={() => setIsStatePanelVisible(!isStatePanelVisible())}
+      />
     </div>
   );
 };

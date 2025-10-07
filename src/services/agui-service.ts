@@ -1,5 +1,5 @@
 import { createSignal } from 'solid-js';
-import type { AGUIMessage, AGUIRequest, AGUIState, StreamEvent, BaseEvent } from './types';
+import type { AGUIMessage, AGUIRequest, AGUIState, StreamEvent, BaseEvent, AgentState, StateSnapshotEvent, StateDeltaEvent } from './types';
 import { AG_UI_EVENT_TYPES } from './types';
 
 export interface ChatService {
@@ -8,12 +8,17 @@ export interface ChatService {
   isLoading: () => boolean;
   error: () => string | null;
   clearMessages: () => void;
+
+  // Human-in-the-loop state
+  agentState: () => AgentState | null;
+  clearState: () => void;
 }
 
 export function createAGUIService(): ChatService {
   const [messages, setMessages] = createSignal<AGUIMessage[]>([]);
   const [isLoading, setIsLoading] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
+  const [agentState, setAgentState] = createSignal<AgentState | null>(null);
 
   const endpoint = 'http://localhost:8000/agent';
 
@@ -100,6 +105,21 @@ export function createAGUIService(): ChatService {
                   });
                   break;
 
+                case AG_UI_EVENT_TYPES.STATE_SNAPSHOT:
+                  const snapshotEvent = event as StateSnapshotEvent;
+                  console.log('State snapshot:', snapshotEvent.state);
+                  setAgentState(snapshotEvent.state);
+                  break;
+
+                case AG_UI_EVENT_TYPES.STATE_DELTA:
+                  const deltaEvent = event as StateDeltaEvent;
+                  console.log('State delta:', deltaEvent.delta);
+                  setAgentState(prev => {
+                    if (!prev) return null;
+                    return { ...prev, ...deltaEvent.delta };
+                  });
+                  break;
+
                 case AG_UI_EVENT_TYPES.RUN_FINISHED:
                   console.log('Run finished:', event);
                   break;
@@ -133,11 +153,17 @@ export function createAGUIService(): ChatService {
     setError(null);
   };
 
+  const clearState = () => {
+    setAgentState(null);
+  };
+
   return {
     messages,
     sendMessage,
     isLoading,
     error,
-    clearMessages
+    clearMessages,
+    agentState,
+    clearState
   };
 }

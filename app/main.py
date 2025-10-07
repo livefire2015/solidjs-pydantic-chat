@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from typing import List, AsyncGenerator
 
 from agent import agent, AgentDeps
+from models import SharedState
 
 
 class ChatMessage(BaseModel):
@@ -84,14 +85,64 @@ async def generate_agui_events(request: ChatRequest) -> AsyncGenerator[str, None
         }
         yield f"data: {json.dumps(run_started_event)}\n\n"
 
+        # Create shared state and state callback for streaming state updates
+        shared_state = SharedState(conversation_id=run_id)
+
+        def state_callback(state: SharedState):
+            """Callback to emit state events when state changes"""
+            state_event = {
+                "type": "STATE_SNAPSHOT",
+                "timestamp": int(time.time() * 1000),
+                "state": state.model_dump()
+            }
+            # Note: This would need to be yielded in a real streaming scenario
+            # For now, we'll collect state changes and emit them after
+
         # Create dependencies for this request
-        deps = AgentDeps(user_id="default_user")
+        deps = AgentDeps(
+            user_id="default_user",
+            state=shared_state,
+            state_callback=state_callback
+        )
+
+        # Emit initial state snapshot
+        initial_state_event = {
+            "type": "STATE_SNAPSHOT",
+            "timestamp": int(time.time() * 1000),
+            "state": shared_state.model_dump()
+        }
+        yield f"data: {json.dumps(initial_state_event)}\n\n"
 
         # Get the last user message
         last_message = request.messages[-1].content if request.messages else "Hello"
 
+        # Add initial thoughts
+        deps.add_thought(f"Received user message: {last_message}")
+        deps.set_task("Processing Request", "Analyzing user input")
+
+        # Emit state update after initial thoughts
+        state_update_event = {
+            "type": "STATE_DELTA",
+            "timestamp": int(time.time() * 1000),
+            "delta": {
+                "agent_thoughts": shared_state.agent_thoughts,
+                "current_task": shared_state.current_task,
+                "current_step": shared_state.current_step,
+                "version": shared_state.version
+            }
+        }
+        yield f"data: {json.dumps(state_update_event)}\n\n"
+
         # Run the agent
         result = await agent.run(last_message, deps=deps)
+
+        # Emit final state snapshot
+        final_state_event = {
+            "type": "STATE_SNAPSHOT",
+            "timestamp": int(time.time() * 1000),
+            "state": shared_state.model_dump()
+        }
+        yield f"data: {json.dumps(final_state_event)}\n\n"
 
         # Emit TEXT_MESSAGE_CONTENT event with the response
         text_content_event = {
@@ -101,6 +152,23 @@ async def generate_agui_events(request: ChatRequest) -> AsyncGenerator[str, None
             "delta": False
         }
         yield f"data: {json.dumps(text_content_event)}\n\n"
+
+        # Mark task as completed
+        deps.set_task("Request Completed", "Response generated")
+        deps.set_progress(1.0)
+
+        # Emit final state update
+        completion_state_event = {
+            "type": "STATE_DELTA",
+            "timestamp": int(time.time() * 1000),
+            "delta": {
+                "current_task": shared_state.current_task,
+                "current_step": shared_state.current_step,
+                "progress": shared_state.progress,
+                "version": shared_state.version
+            }
+        }
+        yield f"data: {json.dumps(completion_state_event)}\n\n"
 
         # Emit RUN_FINISHED event
         run_finished_event = {

@@ -54,6 +54,50 @@ export interface RunFinishedEvent extends BaseEvent {
   result?: any;
 }
 
+export interface StateSnapshotEvent extends BaseEvent {
+  type: typeof AG_UI_EVENT_TYPES.STATE_SNAPSHOT;
+  state: AgentState;
+}
+
+export interface StateDeltaEvent extends BaseEvent {
+  type: typeof AG_UI_EVENT_TYPES.STATE_DELTA;
+  delta: Partial<AgentState>;
+}
+
+// Agent state types for human-in-the-loop collaboration
+export interface AgentProposal {
+  id: string;
+  action: string;
+  description: string;
+  parameters: Record<string, any>;
+  reasoning: string;
+  confidence: number;
+  requires_approval: boolean;
+  created_at: string;
+}
+
+export interface AgentState {
+  conversation_id: string;
+  user_preferences: Record<string, any>;
+  context: string;
+
+  // Human-in-the-loop state
+  agent_thoughts: string[];
+  current_task?: string;
+  current_step?: string;
+  progress: number;
+  proposals: AgentProposal[];
+
+  // State versioning
+  version: number;
+  last_updated: string;
+
+  // Agent reasoning state
+  reasoning_chain: string[];
+  working_memory: Record<string, any>;
+  next_actions: string[];
+}
+
 // Legacy types (for backward compatibility)
 export interface AGUIMessage {
   role: 'user' | 'assistant';
