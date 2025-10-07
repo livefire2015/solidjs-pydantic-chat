@@ -74,7 +74,7 @@ const ChatInterface: Component = () => {
         </Show>
 
         <MessageInput
-          onSendMessage={chatService.sendMessage}
+          onSendMessage={chatService.sendMessageWithAGUI}
           disabled={chatService.isLoading()}
         />
       </main>
