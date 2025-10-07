@@ -1,9 +1,12 @@
 import os
+import json
+import time
+import uuid
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
-from typing import List
+from typing import List, AsyncGenerator
 
 from agent import agent, AgentDeps
 
@@ -66,6 +69,72 @@ async def run_agent(request: ChatRequest) -> ChatResponse:
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "message": "Backend is running"}
+
+
+async def generate_agui_events(request: ChatRequest) -> AsyncGenerator[str, None]:
+    """Generate AG-UI protocol events for streaming response"""
+    run_id = str(uuid.uuid4())
+
+    try:
+        # Emit RUN_STARTED event
+        run_started_event = {
+            "type": "RUN_STARTED",
+            "timestamp": int(time.time() * 1000),
+            "runId": run_id
+        }
+        yield f"data: {json.dumps(run_started_event)}\n\n"
+
+        # Create dependencies for this request
+        deps = AgentDeps(user_id="default_user")
+
+        # Get the last user message
+        last_message = request.messages[-1].content if request.messages else "Hello"
+
+        # Run the agent
+        result = await agent.run(last_message, deps=deps)
+
+        # Emit TEXT_MESSAGE_CONTENT event with the response
+        text_content_event = {
+            "type": "TEXT_MESSAGE_CONTENT",
+            "timestamp": int(time.time() * 1000),
+            "content": result.output,
+            "delta": False
+        }
+        yield f"data: {json.dumps(text_content_event)}\n\n"
+
+        # Emit RUN_FINISHED event
+        run_finished_event = {
+            "type": "RUN_FINISHED",
+            "timestamp": int(time.time() * 1000),
+            "runId": run_id,
+            "result": {"message": result.output}
+        }
+        yield f"data: {json.dumps(run_finished_event)}\n\n"
+
+    except Exception as e:
+        # Emit RUN_ERROR event on failure
+        error_event = {
+            "type": "RUN_ERROR",
+            "timestamp": int(time.time() * 1000),
+            "runId": run_id,
+            "error": str(e)
+        }
+        yield f"data: {json.dumps(error_event)}\n\n"
+
+
+@app.post("/agent/stream")
+async def stream_agent(request: ChatRequest):
+    """AG-UI Protocol compliant SSE endpoint for streaming agent responses"""
+    return StreamingResponse(
+        generate_agui_events(request),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
 
 
 def main():
